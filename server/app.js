@@ -14,26 +14,42 @@ app.get("/", (req, res) => {
 });
 
 app.get("/trips", (req, res) => {
-  let keywords = req.query.keywords;
+  // Query params: keywords (optional), page (1-based), limit (per page)
+  const { keywords = "", page = "1", limit = "10" } = req.query;
 
-  if (keywords === undefined) {
-    return res.status(400).json({
-      message: "Please send keywords parameter in the URL endpoint",
+  let results = [];
+
+  if (!keywords || keywords.trim() === "") {
+    // no keyword filtering -> all trips
+    results = trips;
+  } else {
+    const regexKeywords = keywords.split(" ").join("|");
+    const regex = new RegExp(regexKeywords, "ig");
+    results = trips.filter((trip) => {
+      return (
+        (trip.title && trip.title.match(regex)) ||
+        (trip.description && trip.description.match(regex)) ||
+        (trip.tags && trip.tags.filter((tag) => tag.match(regex)).length)
+      );
     });
   }
 
-  const regexKeywords = keywords.split(" ").join("|");
-  const regex = new RegExp(regexKeywords, "ig");
-  const results = trips.filter((trip) => {
-    return (
-      trip.title.match(regex) ||
-      trip.description.match(regex) ||
-      trip.tags.filter((tag) => tag.match(regex)).length
-    );
-  });
+  // pagination
+  const pageNum = Math.max(parseInt(page, 10) || 1, 1);
+  const perPage = Math.max(parseInt(limit, 10) || 10, 1);
+  const total = results.length;
+  const totalPages = Math.max(Math.ceil(total / perPage), 1);
+  const start = (pageNum - 1) * perPage;
+  const paginated = results.slice(start, start + perPage);
 
   return res.json({
-    data: results,
+    data: paginated,
+    meta: {
+      total,
+      page: pageNum,
+      perPage,
+      totalPages,
+    },
   });
 });
 

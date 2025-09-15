@@ -22,7 +22,9 @@ const SearchBar = () => {
   const fetchAllData = async () => {
     try {
       setLoading("Loading");
-      const report = await axios.get("http://localhost:4001/trips?keywords=");
+      const report = await axios.get("http://localhost:4001/trips", {
+        params: { keywords: "", page: 1, limit: 100 },
+      });
       setLoading("success");
       setResults(report.data.data || []);
     } catch (error) {
@@ -35,9 +37,9 @@ const SearchBar = () => {
   const handleSearch = async () => {
     try {
       setLoading("Loading");
-      const report = await axios.get(
-        `http://localhost:4001/trips?keywords=${search}`
-      );
+      const report = await axios.get("http://localhost:4001/trips", {
+        params: { keywords: search.trim(), page: 1, limit: 100 },
+      });
       setLoading("success");
       setResults(report.data.data || []);
     } catch (error) {
@@ -65,13 +67,11 @@ const SearchBar = () => {
         {loading === "success" && results.length === 0 && (
           <h2 className="text-gray-500">ไม่พบสถานที่ท่องเที่ยวที่ค้นหา</h2>
         )}
-        {loading === "success" &&
-          results.length > 0 &&
-          results.map((item) => (
-            <div key={item.eid} className="mt-13">
-              <TouristAttractionList attraction={item} />
-            </div>
-          ))}
+        {loading === "success" && results.length > 0 && (
+          <div className="mt-13">
+            <TouristAttractionList attractions={results} />
+          </div>
+        )}
       </div>
     </div>
   );
